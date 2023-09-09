@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  dev:
+    container_name: starter_app
+    stdin_open: true
+    image: nestjs-api-dev:1.0.0
+    build:
+      context: .
+      target: development
+      dockerfile: ./Dockerfile
+    depends_on:
+    - postgres
+    ports:
+      - 3000:3000
+      - 5432:5432
+    command: npm run serve
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-accounts/ninecoins-dev.json
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ninecoins_db
+    env_file:
+      - .env
+    restart: unless-stopped
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    restart: always
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ninecoins_db
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
+    name: nest-db
