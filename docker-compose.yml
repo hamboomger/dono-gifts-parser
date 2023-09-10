@@ -2,26 +2,24 @@ version: '3.8'
 
 services:
   dev:
-    container_name: starter_app
+    container_name: dono-gifts-parser
     stdin_open: true
-    image: nestjs-api-dev:1.0.0
     build:
       context: .
-      target: development
-      dockerfile: ./Dockerfile
     depends_on:
-    - postgres
+      - postgres_db
     ports:
       - 3000:3000
-      - 5432:5432
     command: npm run serve
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-accounts/ninecoins-dev.json
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ninecoins_db
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-accounts/donoDevServiceAccountKey.json
+      - DATABASE_URL=postgresql://postgres:postgres@postgres_db:5432/dono_db
     env_file:
       - .env
     restart: unless-stopped
-  postgres:
+    volumes:
+      - ./src:/app/src
+  postgres_db:
     image: postgres:13
     container_name: postgres
     restart: always
@@ -30,7 +28,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ninecoins_db
+      POSTGRES_DB: dono_db
     volumes:
       - postgres:/var/lib/postgresql/data
 

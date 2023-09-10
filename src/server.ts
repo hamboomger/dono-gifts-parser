@@ -8,11 +8,11 @@ import { AppConfigService } from '@/common/AppConfigService'
 import { apiDocs } from '@/apiDocs'
 import testAuthMiddleware from '@/common/middleware/testAuth'
 import { authMiddleware } from '@/common/middleware/auth'
-import { usersRoute } from '@/user/routes/usersRoute'
 import {
   handleFlareErrors,
   handleOtherErrors,
 } from '@/common/middleware/errors'
+import { giftsRoute } from '@/parsing/routes/giftsRoute'
 
 export function getServer(): Express {
   const app = express()
@@ -26,10 +26,13 @@ export function getServer(): Express {
     app.use('/docs', swaggerUi.serve, swaggerUi.setup(apiDocs))
   }
 
-  app.use(authMiddleware)
-  app.use(testAuthMiddleware)
+  if (config.env.USE_TEST_AUTH) {
+    app.use(testAuthMiddleware)
+  } else {
+    app.use(authMiddleware)
+  }
 
-  app.use(usersRoute())
+  app.use(giftsRoute())
 
   app.use(handleFlareErrors)
   app.use(handleOtherErrors)

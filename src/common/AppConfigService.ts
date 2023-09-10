@@ -13,6 +13,8 @@ const schema = z.object({
   IS_LOCAL: zfdTypes.boolean(),
   LOGDNA_APP_NAME: z.string(),
   LOGDNA_INGESTION_KEY: z.string(),
+  ASIN_DATA_API_KEY: z.string(),
+  USE_TEST_AUTH: zfdTypes.boolean().default('0'),
 })
 
 @Service()

@@ -1,33 +1,29 @@
-FROM node:18.12.1 AS development
+FROM --platform=linux/amd64 node:slim
+
+# We don't need the standalone Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+
+RUN apt-get update
+RUN apt-get install -y openssl
+
+# Install Google Chrome Stable and fonts
+# Note: this installs the necessary libs to make the browser work with Puppeteer.
+RUN apt-get update && apt-get install gnupg wget -y && \
+    wget --quiet --output-document=- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
+    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
+    apt-get update && \
+    apt-get install google-chrome-stable -y --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+# FROM public.ecr.aws/lambda/nodejs:14.2022.09.09.11
+# Create working directory
+WORKDIR /app
 
 WORKDIR /app
 
-RUN npm install -g npm@9.1.2
-
 COPY package*.json ./
-
-RUN npm install glob rimraf
 RUN npm install
 
-COPY . .
+COPY . ./
 
 RUN npx prisma generate
-
-RUN npm run build
-
-FROM node:18.12.1 as production
-
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
-WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm install --only=production
-
-COPY . .
-
-COPY --from=development /app/dist ./dist
-
-CMD ["node", "dist/main"]

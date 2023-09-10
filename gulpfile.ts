@@ -50,4 +50,4 @@ exports.testInspect = series(
   loadTestDotenvFile,
   runTestsAndInspect,
 )
-exports.serve = series(build, watch, runPrismaMigrations, startServer)
+exports.serve = series(build, watch, startServer)
