@@ -1,7 +1,8 @@
 import { Request, RequestHandler } from 'express'
 import admin from 'firebase-admin'
 import { Fls } from '@flares/pascal-case-code-flares/dist'
-import {appLogger} from "@/common/logging/appLogger";
+import {Container} from "typedi";
+import {AppConfigService} from "@/common/AppConfigService";
 
 interface UserData {
   uid: string
@@ -9,23 +10,13 @@ interface UserData {
 }
 
 export const authMiddleware: RequestHandler = async (req, res, next) => {
-  if (process.env.NODE_ENV === 'test') {
-    next()
-    return
-  }
+  const appConfig = Container.get(AppConfigService)
   const authToken = req.get('authorization')
-  try {
-    const token = await admin.auth().verifyIdToken(authToken as string)
-    const user = await admin.auth().getUser(token.uid)
-    req.user = {
-      uid: user.uid,
-      email: user.email ?? 'none',
-    }
-    next()
-  } catch (e) {
-    appLogger.error({ message: 'Failed to verify user by token', error: e })
+  if (authToken !== appConfig.env.SERVER_API_KEY) {
+    console.error('Failed to verify user by token')
     throw Fls.Forbidden403('Failed to verify user by token')
   }
+  next()
 }
 
 export function getUser(req: Request<any, any, any, any>): UserData {

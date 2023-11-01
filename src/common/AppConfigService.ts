@@ -2,18 +2,14 @@ import { Service } from 'typedi'
 import { z } from 'zod'
 
 import { zfdTypes } from '@/common/utils/zodUtils'
-import { appLogger } from '@/common/logging/appLogger'
 
 const schema = z.object({
   PORT: zfdTypes.number().optional(),
-  DATABASE_URL: z.string(),
+  SERVER_API_KEY: z.string(),
   DEPLOY_SWAGGER_DOC_ROUTE: zfdTypes.boolean().default('0'),
   SEND_LOGS: zfdTypes.boolean().default('0'),
   LOG_REQUESTS: zfdTypes.boolean().default('0'),
-  IS_LOCAL: zfdTypes.boolean(),
-  LOGDNA_APP_NAME: z.string(),
-  LOGDNA_INGESTION_KEY: z.string(),
-  ASIN_DATA_API_KEY: z.string(),
+  IS_LOCAL: zfdTypes.boolean().default('0'),
   USE_TEST_AUTH: zfdTypes.boolean().default('0'),
 })
 
