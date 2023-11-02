@@ -1,8 +1,10 @@
 import { Request, RequestHandler } from 'express'
 import admin from 'firebase-admin'
 import { Fls } from '@flares/pascal-case-code-flares/dist'
-import {Container} from "typedi";
-import {AppConfigService} from "@/common/AppConfigService";
+import { Container } from 'typedi'
+import * as crypto from 'crypto'
+
+import { AppConfigService } from '@/common/AppConfigService'
 
 interface UserData {
   uid: string
@@ -11,11 +13,22 @@ interface UserData {
 
 export const authMiddleware: RequestHandler = async (req, res, next) => {
   const appConfig = Container.get(AppConfigService)
-  const authToken = req.get('authorization')
-  if (authToken !== appConfig.env.SERVER_API_KEY) {
-    console.error('Failed to verify user by token')
-    throw Fls.Forbidden403('Failed to verify user by token')
+  if (!req.header('Authorization') || !req.header('CURRENT_TIME')) {
+    throw Fls.Unauthorized401('Authorization & CURRENT_TIME header required')
   }
+
+  const signedTime = req.header('Authorization')!
+  const currentTime = req.header('CURRENT_TIME')!
+
+  const locallySignedTime = crypto
+    .createHmac('sha256', appConfig.env.SERVER_API_KEY)
+    .update(currentTime)
+    .digest('hex')
+
+  if (locallySignedTime !== signedTime) {
+    throw Fls.Forbidden403('Invalid Authorization header')
+  }
+
   next()
 }
 

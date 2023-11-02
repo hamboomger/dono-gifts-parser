@@ -16,11 +16,7 @@ export function getServer(): Express {
   app.use(bodyParser.urlencoded({ extended: false }))
   app.use(bodyParser.json())
 
-  if (config.env.USE_TEST_AUTH) {
-    app.use(testAuthMiddleware)
-  } else {
-    app.use(authMiddleware)
-  }
+  app.use(authMiddleware)
 
   app.use(scrapingRoute())
 
