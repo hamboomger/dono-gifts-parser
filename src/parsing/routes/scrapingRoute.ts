@@ -10,6 +10,8 @@ export function scrapingRoute(): Router {
 
   router.get('/scrape-url', async (req, res) => {
     const { url } = req.query as { url: string }
+
+    console.log(`XXXX URL TO PARSE: ${url}`)
     const browser = await puppeteerService.getBrowser()
     const page = await browser.newPage()
     await page.setUserAgent(
