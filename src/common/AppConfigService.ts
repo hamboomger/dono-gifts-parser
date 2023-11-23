@@ -11,6 +11,7 @@ const schema = z.object({
   LOG_REQUESTS: zfdTypes.boolean().default('0'),
   IS_LOCAL: zfdTypes.boolean().default('0'),
   USE_TEST_AUTH: zfdTypes.boolean().default('0'),
+  BRIGHT_DATA_PASSWORD: z.string(),
 })
 
 @Service()

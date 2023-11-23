@@ -8,6 +8,7 @@ export const parseGiftFromPageSchema = defineRequestSchema({
   req: {
     query: z.strictObject({
       url: z.string(),
+      proxyCode: z.string().optional(),
     }),
   },
   res: {
