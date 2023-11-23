@@ -10,9 +10,12 @@ export function scrapingRoute(): Router {
   const puppeteerService = Container.get(PuppeteerService)
 
   router.get('/scrape-url', async (req, res) => {
-    const { url } = req.query as { url: string }
+    const { url, proxyCode } = req.query as {
+      url: string
+      proxyCode: string | undefined
+    }
 
-    const browser = await puppeteerService.getBrowser()
+    const browser = await puppeteerService.getBrowser(proxyCode)
     const page = await browser.newPage()
     await cancelImagesDownload(page)
 
@@ -28,7 +31,7 @@ export function scrapingRoute(): Router {
       waitUntil: 'domcontentloaded',
     })
     const html = await page.content()
-    page.close()
+    page.close().catch((err) => console.error('Failed to close page', err))
 
     res.contentType('html')
     res.send(html)
