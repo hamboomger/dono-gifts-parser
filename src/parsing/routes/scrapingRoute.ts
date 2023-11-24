@@ -15,8 +15,7 @@ export function scrapingRoute(): Router {
       proxyCode: string | undefined
     }
 
-    const browser = await puppeteerService.getBrowser(proxyCode)
-    const page = await browser.newPage()
+    const page = await puppeteerService.newPage(proxyCode)
     await cancelImagesDownload(page)
 
     await page.setUserAgent(

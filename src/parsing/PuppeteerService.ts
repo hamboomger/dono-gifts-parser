@@ -1,4 +1,4 @@
-import puppeteer, { Browser } from 'puppeteer'
+import puppeteer, { Browser, Page } from 'puppeteer'
 import { Service } from 'typedi'
 
 import { AppConfigService } from '@/common/AppConfigService'
@@ -6,17 +6,29 @@ import { AppConfigService } from '@/common/AppConfigService'
 @Service()
 export class PuppeteerService {
   private browser: Browser | undefined
-  private browsersWithProxy = new Map<string, Browser>()
+  private browserWithProxy: Browser | undefined
 
   constructor(private config: AppConfigService) {}
 
-  async getBrowser(proxyCountry?: string): Promise<Browser> {
+  async newPage(proxyCountry?: string): Promise<Page> {
+    const browser = await this.getBrowser(Boolean(proxyCountry))
+    const page = await browser.newPage()
     if (proxyCountry) {
-      const browser = this.browsersWithProxy.get(proxyCountry)
-      if (!browser || !browser.isConnected()) {
-        return this.createBrowserWithProxy(proxyCountry)
+      await page.authenticate({
+        username: `brd-customer-hl_d40b5744-zone-residential-country-${proxyCountry}`,
+        password: this.config.env.BRIGHT_DATA_PASSWORD,
+      })
+    }
+
+    return page
+  }
+
+  async getBrowser(withProxy?: boolean): Promise<Browser> {
+    if (withProxy) {
+      if (!this.browserWithProxy || !this.browserWithProxy.isConnected()) {
+        return this.createBrowserWithProxy()
       } else {
-        return browser
+        return this.browserWithProxy
       }
     }
 
@@ -38,22 +50,21 @@ export class PuppeteerService {
     return this.browser
   }
 
-  private async createBrowserWithProxy(countryCode: string): Promise<Browser> {
-    console.log(`Launching browser with country proxy = ${countryCode}...`)
-    const proxyUser = `brd-customer-hl_d40b5744-zone-residential-country-${countryCode}`
-
-    const browser = await puppeteer.launch({
+  private async createBrowserWithProxy(): Promise<Browser> {
+    console.log(`Launching browser with proxy...`)
+    this.browserWithProxy = await puppeteer.launch({
       headless: 'new',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--proxy-server=brd.superproxy.io:22225',
-        `--proxy-auth=${proxyUser}:${this.config.env.BRIGHT_DATA_PASSWORD}`,
       ],
+      ignoreHTTPSErrors: true,
     })
-    this.browsersWithProxy.set(countryCode, browser)
-    browser.on('disconnected', () => this.createBrowserWithProxy(countryCode))
+    this.browserWithProxy.on('disconnected', () =>
+      this.createBrowserWithProxy(),
+    )
     console.log('Init...Done')
-    return browser
+    return this.browserWithProxy
   }
 }
