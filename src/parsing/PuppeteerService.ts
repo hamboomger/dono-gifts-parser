@@ -7,11 +7,12 @@ import { AppConfigService } from '@/common/AppConfigService'
 export class PuppeteerService {
   private browser: Browser | undefined
   private browserWithProxy: Browser | undefined
+  private lastProxyCountry: string | undefined
 
   constructor(private config: AppConfigService) {}
 
   async newPage(proxyCountry?: string): Promise<Page> {
-    const browser = await this.getBrowser(Boolean(proxyCountry))
+    const browser = await this.getBrowser(proxyCountry)
     const page = await browser.newPage()
     if (proxyCountry) {
       await page.authenticate({
@@ -23,9 +24,16 @@ export class PuppeteerService {
     return page
   }
 
-  async getBrowser(withProxy?: boolean): Promise<Browser> {
-    if (withProxy) {
+  async getBrowser(proxyCountry?: string): Promise<Browser> {
+    if (proxyCountry) {
       if (!this.browserWithProxy || !this.browserWithProxy.isConnected()) {
+        this.lastProxyCountry = proxyCountry
+
+        return this.createBrowserWithProxy()
+      } else if (this.lastProxyCountry !== proxyCountry) {
+        this.lastProxyCountry = proxyCountry
+
+        await this.browserWithProxy.close()
         return this.createBrowserWithProxy()
       } else {
         return this.browserWithProxy
@@ -61,9 +69,6 @@ export class PuppeteerService {
       ],
       ignoreHTTPSErrors: true,
     })
-    this.browserWithProxy.on('disconnected', () =>
-      this.createBrowserWithProxy(),
-    )
     console.log('Init...Done')
     return this.browserWithProxy
   }
