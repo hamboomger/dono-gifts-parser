@@ -10,9 +10,14 @@ export function scrapingRoute(): Router {
   const puppeteerService = Container.get(PuppeteerService)
 
   router.get('/scrape-url', async (req, res) => {
-    const { url, proxyCode } = req.query as {
+    const {
+      url,
+      proxyCode,
+      waitUntil: waitUntilQueryParam,
+    } = req.query as {
       url: string
       proxyCode: string | undefined
+      waitUntil: string | undefined
     }
 
     const page = await puppeteerService.newPage(proxyCode)
@@ -25,9 +30,11 @@ export function scrapingRoute(): Router {
     await page.setExtraHTTPHeaders({
       'Accept-Language': 'en;q=0.8, *;q=0.5',
     })
+    const waitUntil =
+      waitUntilQueryParam === 'load' ? 'load' : 'domcontentloaded'
 
     await page.goto(url, {
-      waitUntil: 'domcontentloaded',
+      waitUntil,
     })
     const html = await page.content()
     page.close().catch((err) => console.error('Failed to close page', err))
