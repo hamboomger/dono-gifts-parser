@@ -7,11 +7,8 @@ import { Container } from 'typedi'
 
 import { getServer } from '@/server'
 import { AppConfigService } from '@/common/AppConfigService'
-import { initFirebaseAdmin } from '@/common/config/firebase-admin.config'
 
 async function bootstrap() {
-  initFirebaseAdmin()
-
   const server = getServer()
   const config = Container.get(AppConfigService)
 
