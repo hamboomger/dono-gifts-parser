@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { Container } from 'typedi'
-import { Page } from 'puppeteer'
+import { Page, PuppeteerLifeCycleEvent } from 'puppeteer'
 
 import { PuppeteerService } from '@/parsing/PuppeteerService'
 
@@ -30,11 +30,11 @@ export function scrapingRoute(): Router {
     await page.setExtraHTTPHeaders({
       'Accept-Language': 'en;q=0.8, *;q=0.5',
     })
-    const waitUntil =
-      waitUntilQueryParam === 'load' ? 'load' : 'domcontentloaded'
+    const waitUntil = waitUntilQueryParam ?? 'domcontentloaded'
 
     await page.goto(url, {
-      waitUntil,
+      waitUntil: waitUntil as PuppeteerLifeCycleEvent,
+      timeout: 15_000
     })
     const html = await page.content()
     page.close().catch((err) => console.error('Failed to close page', err))
