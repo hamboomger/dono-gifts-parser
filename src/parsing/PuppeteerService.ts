@@ -1,4 +1,4 @@
-import puppeteer, { Browser, Page } from 'puppeteer'
+import puppeteer, { Browser, BrowserContext, Page } from 'puppeteer'
 import { Service } from 'typedi'
 
 import { AppConfigService } from '@/common/AppConfigService'
@@ -11,9 +11,10 @@ export class PuppeteerService {
 
   constructor(private config: AppConfigService) {}
 
-  async newPage(proxyCountry?: string): Promise<Page> {
+  async newPage(proxyCountry?: string): Promise<{ page: Page, cleanUp: () => Promise<void> }> {
     const browser = await this.getBrowser(proxyCountry)
-    const page = await browser.newPage()
+    const context = await browser.createIncognitoBrowserContext()
+    const page = await context.newPage()
     if (proxyCountry) {
       await page.authenticate({
         username: `brd-customer-hl_d40b5744-zone-residential-country-${proxyCountry}`,
@@ -21,7 +22,12 @@ export class PuppeteerService {
       })
     }
 
-    return page
+    async function cleanUp() {
+      await page.close()
+      await context.close()
+    }
+
+    return { page, cleanUp }
   }
 
   async getBrowser(proxyCountry?: string): Promise<Browser> {

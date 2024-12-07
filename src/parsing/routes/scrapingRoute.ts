@@ -20,7 +20,7 @@ export function scrapingRoute(): Router {
       waitUntil: string | undefined
     }
 
-    const page = await puppeteerService.newPage(proxyCode)
+    const { page, cleanUp } = await puppeteerService.newPage(proxyCode)
     await cancelImagesDownload(page)
 
     await page.setUserAgent(
@@ -37,7 +37,7 @@ export function scrapingRoute(): Router {
       timeout: 15_000
     })
     const html = await page.content()
-    page.close().catch((err) => console.error('Failed to close page', err))
+    await cleanUp()
 
     res.contentType('html')
     res.send(html)
