@@ -53,14 +53,20 @@ export class PuppeteerService {
       }
     }
 
+    console.log(`this.browser: ${this.browser}`)
+    console.log(`this.browser.isConnected: ${this.browser?.isConnected()}`)
     if (!this.browser || this.browser?.isConnected()) {
+    console.log(`XXX 1`)
       return this.createBrowser()
     } else {
       if (this.requestsCount >= TOTAL_REQUESTS_PER_SESSION) {
+        console.log(`XXX 2`)
         this.requestsCount = 0;
         await this.browser.close()
+        this.browser = undefined
         return this.createBrowser()
       }
+      console.log(`XXX 3`)
       return this.browser
     }
   }
