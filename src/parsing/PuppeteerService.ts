@@ -2,6 +2,7 @@ import puppeteer, { Browser, BrowserContext, Page } from 'puppeteer'
 import { Service } from 'typedi'
 
 import { AppConfigService } from '@/common/AppConfigService'
+import {Mutex, MutexInterface, Semaphore, SemaphoreInterface, withTimeout} from 'async-mutex';
 
 const TOTAL_REQUESTS_PER_SESSION = 5;
 
@@ -10,29 +11,34 @@ export class PuppeteerService {
   private browser: Browser | undefined
   private browserWithProxy: Browser | undefined
   private lastProxyCountry: string | undefined
+  private mutex: Mutex;
 
-  constructor(private config: AppConfigService) {}
-
-  async newPage(proxyCountry?: string): Promise<{ page: Page, cleanUp: () => Promise<void> }> {
-    const browser = await this.getBrowser(proxyCountry)
-    const context = await browser.createIncognitoBrowserContext()
-    const page = await context.newPage()
-    if (proxyCountry) {
-      await page.authenticate({
-        username: `brd-customer-hl_d40b5744-zone-residential-country-${proxyCountry}`,
-        password: this.config.env.BRIGHT_DATA_PASSWORD,
-      })
-    }
-
-    async function cleanUp() {
-      await page.close()
-      await context.close()
-    }
-
-    return { page, cleanUp }
+  constructor(private config: AppConfigService) {
+    this.mutex = new Mutex();
   }
 
-  async getBrowser(proxyCountry?: string): Promise<Browser> {
+  async newPage(proxyCountry?: string): Promise<{ page: Page, cleanUp: () => Promise<void> }> {
+    return this.mutex.runExclusive(async () => {
+      const browser = await this.getBrowser(proxyCountry)
+      const context = await browser.createIncognitoBrowserContext()
+      const page = await context.newPage()
+      if (proxyCountry) {
+        await page.authenticate({
+          username: `brd-customer-hl_d40b5744-zone-residential-country-${proxyCountry}`,
+          password: this.config.env.BRIGHT_DATA_PASSWORD,
+        })
+      }
+
+      async function cleanUp() {
+        await page.close()
+        await context.close()
+      }
+
+      return { page, cleanUp }
+    })
+  }
+
+  private async getBrowser(proxyCountry?: string): Promise<Browser> {
     if (proxyCountry) {
       if (!this.browserWithProxy || !this.browserWithProxy.isConnected()) {
         this.lastProxyCountry = proxyCountry
