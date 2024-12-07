@@ -10,11 +10,8 @@ export class PuppeteerService {
   private browser: Browser | undefined
   private browserWithProxy: Browser | undefined
   private lastProxyCountry: string | undefined
-  private requestsCount: number;
 
-  constructor(private config: AppConfigService) {
-    this.requestsCount = 0
-  }
+  constructor(private config: AppConfigService) {}
 
   async newPage(proxyCountry?: string): Promise<{ page: Page, cleanUp: () => Promise<void> }> {
     const browser = await this.getBrowser(proxyCountry)
@@ -36,8 +33,6 @@ export class PuppeteerService {
   }
 
   async getBrowser(proxyCountry?: string): Promise<Browser> {
-    this.requestsCount += 1;
-
     if (proxyCountry) {
       if (!this.browserWithProxy || !this.browserWithProxy.isConnected()) {
         this.lastProxyCountry = proxyCountry
@@ -55,17 +50,10 @@ export class PuppeteerService {
 
     console.log(`this.browser: ${this.browser}`)
     console.log(`this.browser.isConnected: ${this.browser?.isConnected()}`)
-    if (!this.browser || this.browser?.isConnected()) {
+    if (!this.browser || !this.browser?.isConnected()) {
     console.log(`XXX 1`)
       return this.createBrowser()
     } else {
-      if (this.requestsCount >= TOTAL_REQUESTS_PER_SESSION) {
-        console.log(`XXX 2`)
-        this.requestsCount = 0;
-        await this.browser.close()
-        this.browser = undefined
-        return this.createBrowser()
-      }
       console.log(`XXX 3`)
       return this.browser
     }
