@@ -3,13 +3,18 @@ import { Service } from 'typedi'
 
 import { AppConfigService } from '@/common/AppConfigService'
 
+const TOTAL_REQUESTS_PER_SESSION = 5;
+
 @Service()
 export class PuppeteerService {
   private browser: Browser | undefined
   private browserWithProxy: Browser | undefined
   private lastProxyCountry: string | undefined
+  private requestsCount: number;
 
-  constructor(private config: AppConfigService) {}
+  constructor(private config: AppConfigService) {
+    this.requestsCount = 0
+  }
 
   async newPage(proxyCountry?: string): Promise<{ page: Page, cleanUp: () => Promise<void> }> {
     const browser = await this.getBrowser(proxyCountry)
@@ -31,6 +36,8 @@ export class PuppeteerService {
   }
 
   async getBrowser(proxyCountry?: string): Promise<Browser> {
+    this.requestsCount += 1;
+
     if (proxyCountry) {
       if (!this.browserWithProxy || !this.browserWithProxy.isConnected()) {
         this.lastProxyCountry = proxyCountry
@@ -49,6 +56,11 @@ export class PuppeteerService {
     if (!this.browser || this.browser?.isConnected()) {
       return this.createBrowser()
     } else {
+      if (this.requestsCount >= TOTAL_REQUESTS_PER_SESSION) {
+        this.requestsCount = 0;
+        await this.browser.close()
+        return this.createBrowser()
+      }
       return this.browser
     }
   }
@@ -59,7 +71,6 @@ export class PuppeteerService {
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     })
-    this.browser.on('disconnected', () => this.createBrowser())
     console.log('Init...Done')
     return this.browser
   }
